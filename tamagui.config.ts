@@ -3,7 +3,7 @@ import { createInterFont } from '@tamagui/font-inter';
 import { createMedia } from '@tamagui/react-native-media-driver';
 import { shorthands } from '@tamagui/shorthands';
 import { themes, tokens } from '@tamagui/themes';
-import { createTamagui, styled, SizableText, H1, YStack } from 'tamagui';
+import { createTamagui, styled, SizableText, H1, YStack, createFont } from 'tamagui';
 
 const animations = createAnimations({
   bouncy: {
@@ -25,7 +25,19 @@ const animations = createAnimations({
   },
 });
 
-const headingFont = createInterFont();
+const headingFont = createFont({
+  family: 'DarkerGrotesque',
+  size: {
+    1: 15,
+    2: 14,
+    3: 15,
+  },
+  weight: {
+    1: '300',
+    2: '400',
+    3: '600',
+  },
+});
 
 const bodyFont = createInterFont();
 
