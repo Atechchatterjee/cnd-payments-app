@@ -1,16 +1,18 @@
 import { Stack } from 'expo-router';
+import { useContext } from 'react';
+import { router } from 'expo-router';
 
 import { Container } from '~/components/Container';
-import { ScreenContent } from '~/components/ScreenContent';
-import { Text, View, XStack, YStack, Button, SizableText } from 'tamagui';
+import { YStack, Button, SizableText } from 'tamagui';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
-import React, { useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect } from 'react';
 import * as AuthSession from 'expo-auth-session';
 import Constants from 'expo-constants';
 import { ImageBackground } from 'react-native';
-import { useFonts } from 'expo-font';
+import { supabase } from '~/lib/supabase';
+import { AuthContext } from '~/context/AuthContext';
+import Icon from 'react-native-remix-icon';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -21,7 +23,7 @@ const REDIRECT_PARAMS: any =
 const redirectUri = AuthSession.makeRedirectUri(REDIRECT_PARAMS);
 
 export default function Home() {
-  const [userInfo, setUserInfo] = useState<any>();
+  const { session } = useContext(AuthContext);
 
   const [_, response, promptAsync] = Google.useAuthRequest({
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
@@ -29,38 +31,34 @@ export default function Home() {
     redirectUri: redirectUri,
   });
 
-  async function getUserInfo(token: string | undefined) {
-    if (!token) return;
-    try {
-      const response = await fetch('https://www.googleapis.com/userinfo/v2/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const user = await response.json();
-      await AsyncStorage.setItem('@user', JSON.stringify(user));
-    } catch (err) {
-      if (err) {
-        console.error(err);
-      }
-    }
-  }
-
-  async function handleSignInWithGoogle() {
-    const user = await AsyncStorage.getItem('@user');
-    if (!user) {
+  async function handleSignInWithGoogle(): Promise<void> {
+    if (!session) {
       if (response?.type === 'success') {
-        await getUserInfo(response.authentication?.accessToken);
+        console.log('id_token: ', (response as any).params.id_token);
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: (response as any).params.id_token,
+        });
+        console.log(error, data);
       }
     } else {
-      setUserInfo(JSON.parse(user));
+      console.log('Already Signed In!!');
+      alert('Already Signed In!!');
     }
+    return new Promise((resolve) => {
+      resolve();
+    });
   }
 
   useEffect(() => {
-    handleSignInWithGoogle();
+    if (response) {
+      handleSignInWithGoogle().then(() => {
+        router.replace('/dashboard');
+      });
+    }
   }, [response]);
 
   const image = { uri: 'https://ik.imagekit.io/hbqsxmwrz/home-bg.jpg?updatedAt=1715576691577' };
-  let [fontsLoaded, fontError] = useFonts({});
 
   return (
     <>
@@ -79,7 +77,6 @@ export default function Home() {
           justifyContent: 'center',
         }}>
         <Container>
-          {/* <Text>user: {JSON.stringify(userInfo, null, 2)}</Text> */}
           <YStack flex={1}>
             <YStack flex={2} justifyContent="center">
               <SizableText
@@ -87,7 +84,10 @@ export default function Home() {
                 style={{ fontFamily: 'DarkerGrotesqueBold', color: '#BBCEFF' }}>
                 CND Payments
               </SizableText>
-              <SizableText size="$11" style={{ fontFamily: 'DarkerGrotesqueExtraBold' }}>
+              <SizableText
+                size="$11"
+                style={{ fontFamily: 'DarkerGrotesqueExtraBold' }}
+                color="white">
                 Get useful{'\n'}insights of your{'\n'}business
               </SizableText>
               <SizableText
@@ -97,19 +97,19 @@ export default function Home() {
               </SizableText>
             </YStack>
             <YStack flex={1} justifyContent="flex-end" gap={10}>
-              <Button theme="active" backgroundColor="black" onPress={() => promptAsync()}>
+              <Button
+                theme="active"
+                backgroundColor="black"
+                color="white"
+                gap="$1"
+                onPress={() => promptAsync()}>
+                <Icon name="google-fill" color="white" size="15px" />
                 Google SignIn
               </Button>
               <Button variant="outlined" onPress={() => promptAsync()} style={{ color: 'black' }}>
                 Admin SignIn
               </Button>
             </YStack>
-            {/* <Button
-            title="Clear User"
-            onPress={() => {
-              AsyncStorage.removeItem('@user');
-            }}
-          /> */}
           </YStack>
         </Container>
       </ImageBackground>

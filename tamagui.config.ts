@@ -26,7 +26,7 @@ const animations = createAnimations({
 });
 
 const headingFont = createFont({
-  family: 'DarkerGrotesque',
+  family: 'DarkerGrotesqueExtraBold',
   size: {
     1: 15,
     2: 14,

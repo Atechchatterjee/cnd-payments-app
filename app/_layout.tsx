@@ -1,7 +1,10 @@
+import { Session } from '@supabase/supabase-js';
 import { useFonts } from 'expo-font';
-import { SplashScreen, Stack } from 'expo-router';
-import { useEffect } from 'react';
-import { TamaguiProvider } from 'tamagui';
+import { router, SplashScreen, Stack, useRootNavigationState } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { TamaguiProvider, Theme } from 'tamagui';
+import { supabase } from '~/lib/supabase';
+import { AuthContext } from '~/context/AuthContext';
 
 import config from '../tamagui.config';
 
@@ -18,17 +21,42 @@ export default function Layout() {
     DarkerGrotesqueSemiBold: require('../assets/fonts/Darker_Grotesque/static/DarkerGrotesque-SemiBold.ttf'),
   });
 
+  const [session, setSession] = useState<Session | null>();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+  }, []);
+
+  const rootNavigationState = useRootNavigationState();
+
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
+      // redirects to the dashboard if the user is already signed in
+      if (session) {
+        router.replace('/dashboard');
+      }
     }
-  }, [loaded]);
+  }, [loaded, session]);
 
   if (!loaded) return null;
 
   return (
-    <TamaguiProvider config={config}>
-      <Stack />
-    </TamaguiProvider>
+    <AuthContext.Provider
+      value={{
+        session,
+      }}>
+      <TamaguiProvider config={config}>
+        <Theme name="light">
+          <Stack />
+        </Theme>
+      </TamaguiProvider>
+    </AuthContext.Provider>
   );
 }
