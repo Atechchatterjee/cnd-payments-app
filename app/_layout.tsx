@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { TamaguiProvider, Theme } from 'tamagui';
 import { supabase } from '~/lib/supabase';
 import { AuthContext } from '~/context/AuthContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import config from '../tamagui.config';
 
@@ -22,6 +23,8 @@ export default function Layout() {
   });
 
   const [session, setSession] = useState<Session | null>();
+
+  const queryClient = new QueryClient();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -52,11 +55,13 @@ export default function Layout() {
       value={{
         session,
       }}>
-      <TamaguiProvider config={config}>
-        <Theme name="light">
-          <Stack />
-        </Theme>
-      </TamaguiProvider>
+      <QueryClientProvider client={queryClient}>
+        <TamaguiProvider config={config}>
+          <Theme name="light">
+            <Stack />
+          </Theme>
+        </TamaguiProvider>
+      </QueryClientProvider>
     </AuthContext.Provider>
   );
 }
