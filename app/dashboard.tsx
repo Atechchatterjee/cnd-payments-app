@@ -21,7 +21,6 @@ export default function Dashboard() {
     initialData: null,
     queryKey: [],
     queryFn: async function fetchProjects() {
-      console.log('fetching project data...');
       const { data, error } = await supabase.from('project').select();
       if (error) {
         console.error(error);
